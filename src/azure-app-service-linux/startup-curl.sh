@@ -6,7 +6,9 @@
 # #Optional env vars
 # DT_LINUX_FLAVOR ... Some containers may use alpine based images (e.g. tomcat) which need to set DT_LINUX_FLAVOR to 'musl'
 if [ -n "$DT_LINUX_FLAVOR" ]
+then
     DT_LINUX_FLAVOR="default"
+fi
 
 curl -o /tmp/installer.sh -s "https://${DT_API_URL}/v1/deployment/installer/agent/unix/paas-sh/latest?Api-Token=${DT_API_TOKEN}&arch=x86&flavor=${DT_LINUX_FLAVOR}" 
 
