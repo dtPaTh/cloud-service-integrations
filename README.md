@@ -23,7 +23,7 @@ Scripts/Commands are executed within the containers init scripts, which is imple
 | java, node.js, ruby, python, ruby | script command, script-file | TBC | TBC | TBC |
 
 #### Available startup scripts
-In [/src/azure-appservice-linux](/src/azure-appservice-linux) you will find 2 flavors one using wget the other curl.
+In [/src/azure-app-service-linux](/src/azure-appservice-linux) you will find 2 flavors one using wget the other curl.
 
 The scripts are parameterized using environment variables:
 | env-var | required | description |
