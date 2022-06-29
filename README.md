@@ -9,4 +9,5 @@
     Easy integration using technology indepentent injection. 
 * [App-Only Integration for Linux](container-integration/universal-injection.md)
 
-    Technology specific integration where *Universal Injection* is not applicable. 
+**Note**
+Please note, that the tutorials and provided scripts within this repository are not officially supported by Dynatrace. 
