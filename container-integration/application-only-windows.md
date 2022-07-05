@@ -1,6 +1,6 @@
 # Custom Container Integration for Distributed Tracing on Windows based containers
 
-Dynatrace provides an automatic and unified way to inject into container hosted applications/processes referred as [Universal Injection](universalinjection.md). In some scenarios like sandboxed container runtimes or Windows Coontainers you cannot use this generic way. As an alternative we provide you with technology specific instructions to integrate Dynatrace OneAgent Code-Modules into your processes.
+Dynatrace provides an automatic and unified way to inject into container hosted applications/processes referred as [Universal Injection](universalinjection.md). In some scenarios like sandboxed container runtimes or Windows containers you need to use technology specific instructions to integrate OneAgent Code-Modules into your application processes such as e.g. Java.
 
 ## Prerequisites
 Before you begin to modify your container images to observe your applications using Dynatrace, you'll need to prepare the following: 
@@ -44,7 +44,7 @@ To allow tracing of your containerized application, download and extract necessa
 Depending on your preferences and needs to build your container images, you may choose from different ways to integrate necessary artifacts to your images 
 e.g. using a mounted volume, create a custom filesystem-layer or copy from a 3rd party location such as artifactory to your image. 
 
-## Download with Multi-Stage Build 
+#### 1. Download OneAgent Code-Modules using a Multi-Stage build 
 
 To reduce image size and container startup, many runtime-images are highly optimized images that only contain necessary runtimes. 
 
@@ -65,7 +65,7 @@ RUN powershell -Command "expand-archive -Path 'c:\\programdata\\dynatrace\\oneag
 
 This stage depends on severall build-time variables to control the d:ownload. The arguments need to be set at image build-time using ```--build-arg```
 
-```docker build . -t <YOUR-IMAGE-NAME> --build-arg "DT_ADDRESS=<ADDRESS>" --build-arg "<DT_API_TOKEN=<ADDRESS>" ```, <ADDRESS> and  
+```docker build . -t <YOUR-IMAGE-NAME> --build-arg "DT_ADDRESS=<ADDRESS>" --build-arg "<DT_API_TOKEN=<ADDRESS>" ``` 
 
 **Note** 
 * Replace ```<YOUR-IMAGE-NAME>```, ```<DT_API_TOKEN>``` and ```<ADDRESS>```
@@ -86,7 +86,7 @@ This stage depends on severall build-time variables to control the d:ownload. Th
 #### What about versioning?
 By default the API endpoint downloads the lastest version, available and ompatible with your cluster version. Alternatively you can use a[different API endpoint, which also allows to specify a specific version. For more details see [REST API documentation](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/deployment/oneagent)
 
-### Copy Dynatrace Code-Modules to your base stage
+#### 2. Copy Dynatrace Code-Modules to your base layer
 With the Dynatrace artifacts downloaded in the previous stage named ```dynatrace``, you can now enhance your dockerfile to copy the extracted content to your application layer. 
 
 ```
@@ -95,7 +95,7 @@ WORKDIR /programdata/dynatrace/oneagent/
 COPY --from=dynatrace /programdata/dynatrace/oneagent/ .
 ```
 
-## Configure agent properties
+### 3. Configure agent (OneAgent Code-Modules) 
 To configure connection parameters, you need to set following environment variables within your container:
 
 |Name|Description|
@@ -103,6 +103,10 @@ To configure connection parameters, you need to set following environment variab
 |DT_TENANT| This is your **environment id**|
 |DT_TENANTTOKEN| Use **tenantToken** retrieved from agent connection paraemeters |
 |DT_CONNECTION_POINT| Use **formattedCommunicationEndpoints** retrieved from agent connection paraemeters|
+
+**Note**
+
+To prevent leaking access tokens, you should pass the connection parameters dynamically when starting the container. Most container runtimes even allow to pass secrets stored within a secret-vault securely as environment variables when starting the container.   
 
 
 ### Additional Configuration
@@ -125,9 +129,9 @@ You can use additional environment variables to configure the agent for e.g. tro
 | DT_LOGLEVELCON | Use this environment variable to define console log-level. Valid options are ```NONE```, ```SEVERE```, ```INFO``` in order to increase log-level. |
 |DT_AGENTACTIVE| ```true``` or ```false``` to enable or disable agent |
 
-## Enable injection of Dynatrace OneAgent Code-Modules
+### 4. Enable injection of OneAgent Code-Modules
 
-## Java
+#### Java
 
 For Java, enhance the java command line with following parameters
 
@@ -139,7 +143,7 @@ E.g.
 ```ENV JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Xshare:off -Djava.net.preferIPv4Stack=true -agentpath:/opt/dynatrace/oneagent/agent/lib64/liboneagentloader.so"```
 
 
-## .NET Framework
+#### .NET Framework
 
 ```
 ENV COR_ENABLE_PROFILING="0x01"
@@ -149,7 +153,7 @@ ENV COR_PROFILER_PATH_64="c:/programdata/dynatrace/oneagent/agent/bin/windows-x8
 ENV COR_PROFILER_PATH="c:/programdata/dynatrace/oneagent/agent/bin/windows-x86-64/oneagentloader.dll"
 ```
 
-## .NET/.NET Core
+#### .NET/.NET Core
 ```
 ENV CORECLR_ENABLE_PROFILING="0x01"
 ENV CORECLR_PROFILER="{B7038F67-52FC-4DA2-AB02-969B3C1EDA03}"
@@ -157,13 +161,6 @@ ENV CORECLR_PROFILER_PATH_32="c:/programdata/dynatrace/oneagent/agent/bin/window
 ENV CORECLR_PROFILER_PATH_64="c:/programdata/dynatrace/oneagent/agent/bin/windows-x86-64/oneagentloader.dll"
 ENV CORECLR_PROFILER_PATH="c:/programdata/dynatrace/oneagent/agent/bin/windows-x86-64/oneagentloader.dll"
 ```
-
-## Running your container
-Before you can run your container, you need to pass the necessary Dynatrace connection parameters to your container image. The following parameters are expected to be passed as environment variables:
-
-*For testing purposes, you can pass these parameters as environment variables when running the container, but for security reasons, 
-you should store and pass the credentials from a secret vaults to your container.*
-
 
 ## Example - Containerized .NET 6 application
 Assuming you have a containerized .NET 6 application with a dockerfile like this:
@@ -203,7 +200,7 @@ RUN powershell -Command "expand-archive -Path 'c:\\programdata\\dynatrace\\oneag
 #Advance base image to integrate Dynatrace
 FROM base AS final
 
-#Copy Dynatrace OneAgent Code-Modules from previous stage
+#Copy OneAgent Code-Modules from previous stage
 RUN mkdir "c:\\programdata\\dynatrace\\oneagent"
 WORKDIR /programdata/dynatrace/oneagent/
 COPY --from=dynatrace /programdata/dynatrace/oneagent/ .

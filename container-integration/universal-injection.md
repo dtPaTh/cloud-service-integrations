@@ -1,6 +1,6 @@
 # Custom Container Integration for Distributed Tracing on Linux based containers
 
-Dynatrace provides an automatic and unified way to inject into container hosted applications/processes of any [supported technology](https://www.dynatrace.com/support/help/technology-support) like Java, node.js, Golang, .NET/.NET Core, PHP as well as Webservers like Apache and NGINX. With this *Universal Injection* (often referred as *App-Only integration* as well) the integration of Dynatrace OneAgent code-modules at e.g. container build-time is easy and streamlined across all technolgies.  
+Dynatrace provides an automatic and unified way to inject into container hosted applications/processes of any [supported technology](https://www.dynatrace.com/support/help/technology-support) like Java, node.js, Golang, .NET/.NET Core, PHP as well as Webservers like Apache and NGINX. With this *Universal Injection* (often referred as *App-Only integration* as well) the integration of OneAgent Code-Modules at e.g. container build-time is easy and streamlined across all technolgies.  
 
 ## Prerequisites
 Before you begin to modify your container images to observe your applications using Dynatrace, you'll need to prepare the following: 
@@ -43,7 +43,7 @@ When manually building the image with docker, you can login with the following c
 ```
 docker login -u <YOUR-ENVIRONMENT-ID> <ADDRESS>
 ```
-### Enhance your container image
+### 1. Enhance your container image
 
 To allow tracing of your containerized application, copy necessary Dynatrace artifacts from the provided registry images to your applicaiton image. 
 
@@ -59,7 +59,7 @@ For **standard linux** containers:
 
 ```<ADDRESS>/linux/oneagent-codemodules```
 
-For **alpine linux / musl libc** based containers: 
+For **Alpine linux / musl libc** based containers: 
 
 ```<ADDRESS>/linux/oneagent-codemodules-musl```
 
@@ -79,7 +79,7 @@ To reduce image size, you can selectivle choose which artifacts to include by us
 ##### What about versioning?
 The Dynatrace registry takes care to provide you with the lastest version, available and ompatible with your cluster version.  
 
-#### Configure agent properties
+#### 2. Configure agent (OneAgent Code-Modules) 
 To configure connection parameters, you need to set following environment variables within your container:
 
 |Name|Description|
@@ -87,6 +87,10 @@ To configure connection parameters, you need to set following environment variab
 |DT_TENANT| This is your **environment id**|
 |DT_TENANTTOKEN| Use **tenantToken** retrieved from agent connection paraemeters |
 |DT_CONNECTION_POINT| Use **formattedCommunicationEndpoints** retrieved from agent connection paraemeters|
+
+**Note**
+
+To prevent leaking access tokens, you should pass the connection parameters dynamically when starting the container. Most container runtimes even allow to pass secrets stored within a secret-vault securely as environment variables when starting the container.  
 
 #### Additional Configuration
 You can use additional environment variables to configure the agent for e.g. troubleshooting or advanced networking.
@@ -109,19 +113,12 @@ You can use additional environment variables to configure the agent for e.g. tro
 | DT_AGENTACTIVE | ```true``` or ```false``` to enable or disable agent |
 
 
-#### Enable automatic injection of Dynatrace
+#### 3. Enable automatic injection of Dynatrace
 To enable automatic injection of Dynatrace into your application processes add following environment variable to your dockerfile
 
 ```
 ENV LD_PRELOAD /opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so
 ```
-
-### Running your container
-Before you can run your container, you need to pass the necessary Dynatrace connection parameters to your container image. The following parameters are expected to be passed as environment variables:
-
-*For testing purposes, you can pass these parameters as environment variables when running the container, but for security reasons, 
-you should store and pass the credentials from a secret vaults to your container.*
-
 
 ## Example - Containerized Java Spring Boot application
 Assuming you have a containerized Spring Boot java application as followed within this [tutorial](https://spring.io/guides/gs/spring-boot-docker/) resulting with a dockerfile like this:
