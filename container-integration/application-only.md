@@ -1,6 +1,6 @@
 # Custom Container Integration for Distributed Tracing on Linux based containers
 
-Dynatrace provides an automatic and unified way to inject into container hosted applications/processes referred as [Universal Injection](universalinjection.md). In some scenarios like sandboxed container runtimes or Windows Coontainers you cannot use this generic way. As an alternative we provide you with technology specific instructions to integrate Dynatrace OneAgent Code-Modules into your processes.
+Dynatrace provides an automatic and unified way to inject into container hosted applications/processes referred as [Universal Injection](universalinjection.md). In some scenarios like sandboxed container runtimes or Windows Coontainers you cannot use this generic way. As an alternative we provide you with technology specific instructions to integrate OneAgent Code-Modules into your processes.
 
 ## Prerequisites
 Before you begin to modify your container images to observe your applications using Dynatrace, you'll need to prepare the following: 
@@ -43,7 +43,7 @@ When manually building the image with docker, you can login with the following c
 ```
 docker login -u <YOUR-ENVIRONMENT-ID> <ADDRESS>
 ```
-### Enhance your container image
+### 1. Enhance your container image
 
 To allow tracing of your containerized application, copy necessary Dynatrace artifacts from the provided registry images to your applicaiton image. 
 
@@ -88,6 +88,11 @@ To configure connection parameters, you need to set following environment variab
 |DT_TENANTTOKEN| Use **tenantToken** retrieved from agent connection paraemeters |
 |DT_CONNECTION_POINT| Use **formattedCommunicationEndpoints** retrieved from agent connection paraemeters|
 
+**Note**
+
+To prevent leaking access tokens, you should pass the connection parameters dynamically when starting the container. Most container runtimes even allow to pass secrets stored within a secret-vault securely as environment variables when starting the container.  
+
+
 ### Additional Configuration
 You can use additional environment variables to configure the agent for e.g. troubleshooting or advanced networking.
 
@@ -108,7 +113,7 @@ You can use additional environment variables to configure the agent for e.g. tro
 | DT_LOGLEVELCON | Use this environment variable to define console log-level. Valid options are ```NONE```, ```SEVERE```, ```INFO``` in order to increase log-level. |
 | DT_AGENTACTIVE | ```true``` or ```false``` to enable or disable agent |
 
-## Enable injection of Dynatrace OneAgent Code-Modules
+## 2. Enable injection of OneAgent Code-Modules
 
 ## Java
 
@@ -127,13 +132,6 @@ ENV CORECLR_ENABLE_PROFILING="0x01"
 ENV CORECLR_PROFILER="{B7038F67-52FC-4DA2-AB02-969B3C1EDA03}"
 ENV CORECLR_PROFILER_PATH="/opt/dynatrace/oneagent/agent/lib64/liboneagentloader.so"
 ```
-
-## Running your container
-Before you can run your container, you need to pass the necessary Dynatrace connection parameters to your container image. The following parameters are expected to be passed as environment variables:
-
-*For testing purposes, you can pass these parameters as environment variables when running the container, but for security reasons, 
-you should store and pass the credentials from a secret vaults to your container.*
-
 
 ## Example - Containerized Java Spring Boot application
 Assuming you have a containerized Spring Boot java application as followed within this [tutorial](https://spring.io/guides/gs/spring-boot-docker/) resulting with a dockerfile like this:
@@ -158,7 +156,7 @@ ENV JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Xshare:off -Djava.net.preferIPv4Stack
 ENTRYPOINT ["java","-jar","/app.jar"]
 ```
 **Note** 
-* The base image is alpine linux based, so we use the *oneagent-codemodules-musl* image. 
+* The base image is Alpine linux based, so we use the *oneagent-codemodules-musl* image. 
 * Replace the ```<ADDRESS>```  as described in [Prerequisites, step #2](#Prerequisites).
 
 ### Build your container using gradle
