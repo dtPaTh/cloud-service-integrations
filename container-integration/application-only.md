@@ -37,7 +37,7 @@ Before you begin to modify your container images to observe your applications us
 
 To integrate OneAgent code-modules, Dynatrace provides a private container registry in every environment with container images containing OneAgent Code-Modules available on your cluster. 
 
-The container registry is secured using your Dynatrace [environment ID](https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) as username, and your API-Token as password. The registry 
+The container registry is secured using your Dynatrace [environment ID](https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) as username, and your API-Token as password. 
 
 When manually building the image with docker, you can login with the following command
 ```
