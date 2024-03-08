@@ -34,7 +34,7 @@ Before you begin to modify your container images to observe your applications us
     For security reasons, we recommand to store the credentials in a security vault you can later use to pass it to your containers.
 
 4. Clone Oneagent container images
-   Dynatrace provides a private container registry in every environment with container images containing  OneAgent Code-Modules available on your cluster. 
+   Dynatrace provides a private container registry in every environment with container images containing OneAgent Code-Modules available on your cluster. 
 
    The container registry is secured using your Dynatrace [environment ID](https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) as username, and your API-Token as password.
 
@@ -120,7 +120,6 @@ To integrate OneAgent code-modules using **Universal Injection*, Dynatrace provi
 When manually building the image with docker, make sure you are logged in to your repository
 ```
    docker login -u <YOUR-REPOSITORY-USERNAME> -p <YOUR-REPOSITORY-PASSWORD> <TARGET-REPOSITORY>
-   
 ```
 ### 1. Enhance your container image
 
@@ -195,7 +194,7 @@ You can use additional environment variables to configure the agent for e.g. tro
 
 
 #### 3. Enable automatic injection of Dynatrace
-To enable automatic injection of Dynatrace into your application processes add following environment variable to your dockerfile
+To enable automatic injection of Dynatrace into your application processes adding following environment variable to your dockerfile/application image.
 
 ```
 ENV LD_PRELOAD /opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so
@@ -240,6 +239,72 @@ docker run -p 8080:8080 -e DT_TENANT='<YOUR-ENVIRONMENT-ID>' -e DT_TENANTTOKEN='
 **Note** 
 * Replace the ```<YOUR-ENVIRONMENT-ID>```,   ```<YOUR-TENANT_TOKEN>``` and ```<YOUR-DT_CONNECTION_POINT>```  as described in [Prerequisites, step #3](#Prerequisites).
 * To simplify the example, the credentials are directly passed as environment variables to the run command. For production cases, you should store the credentials within a secret vault of choice. Most managed container services allow to pass secure values from secret vaults as environment variables when running the container. 
+
+## Example - Containerized ASP.NET Core application with a multi-stage build
+Assuming you have a containerized Asp.Net Core application as provided within this [tutorial](https://github.com/dotnet/dotnet-docker/tree/main/samples/aspnetapp) targeting the [ubuntu based](https://github.com/dotnet/dotnet-docker/blob/main/samples/aspnetapp/Dockerfile.ubuntu) image for which the dockerfile looks like this:
+``` 
+# Learn about building .NET container images:
+# https://github.com/dotnet/dotnet-docker/blob/main/samples/README.md
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
+ARG TARGETARCH
+WORKDIR /source
+
+# copy csproj and restore as distinct layers
+COPY aspnetapp/*.csproj .
+RUN dotnet restore -a $TARGETARCH
+
+# copy everything else and build app
+COPY aspnetapp/. .
+RUN dotnet publish -a $TARGETARCH --no-restore -o /app
+
+# final stage/image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy
+EXPOSE 8080
+WORKDIR /app
+COPY --from=build /app .
+USER $APP_UID
+ENTRYPOINT ["./aspnetapp"]
+```
+
+### Your dockerfile needs to be enhanced like the following:
+```
+# Learn about building .NET container images:
+# https://github.com/dotnet/dotnet-docker/blob/main/samples/README.md
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
+ARG TARGETARCH
+WORKDIR /source
+
+# copy csproj and restore as distinct layers
+COPY aspnetapp/*.csproj .
+RUN dotnet restore -a $TARGETARCH
+
+# copy everything else and build app
+COPY aspnetapp/. .
+RUN dotnet publish -a $TARGETARCH --no-restore -o /app
+
+# final stage/image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy
+EXPOSE 8080
+WORKDIR /app
+COPY --from=build /app .
+USER $APP_UID
+
+# Enable Dynatrace
+COPY --from=<ADDRESS>/linux/oneagent-codemodules:<VERSION>-dotnet-amd64 / /
+ENV LD_PRELOAD /opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so
+
+ENTRYPOINT ["./aspnetapp"]
+```
+
+**Note** 
+* Replace the ```<ADDRESS>``` as described in [Prerequisites, step #2](#Prerequisites).
+* Replace the ```<VERSION>``` as described above.
+* As this is a [multi-stage build](https://docs.docker.com/build/building/multi-stage/), we copied the Dynatrace artefacts and set the configuration in the last stage, to be included in the final application image. 
+* The base image is ubuntu based, so we chose the approprate image tag for standard linux for .NET, which is ```<VERSION>-dotnet-amd64```. For the [alpine based image](https://github.com/dotnet/dotnet-docker/blob/main/samples/aspnetapp/Dockerfile.alpine) included in the tutorial, it would be ```<VERSION>-dotnet-alpine-amd64```
+
+## Important note on containerized PHP application
+While Dynatrace provides a dedicated image including only the necessary artefacts for PHP, as PHP applications are typically served via NGINX or Apache webserver, you need to use the image including all artefacts, ```<VERSION>-amd64``` or ```<VERSION>-alpine-amd64``` when integrating Dynatrace to your image tto fully instrument your application. 
+
 
 ## How-To verify the integration was successful
 There are multiple ways to check if the integration was successful: 
