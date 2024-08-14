@@ -1,0 +1,21 @@
+version: "2"
+
+services:
+  sidecar:
+    image: myrepo.azurecr.io/oneagent-codemodules:1.295-amd64-bootstrap
+    volumes:
+      - myhome:/home/
+  appcontainer:
+    image: "nginx:latest"
+    ports:
+      - "80"
+      - "443"
+    volumes:
+      - myhome:/home/
+    environment:
+      - LD_PRELOAD=/home/dynatrace/oneagent/agent/lib64/liboneagentproc.so
+      - DT_TENANT=XXXX
+      - DT_TENANTTOKEN=XXXXX
+      - DT_CONNECTION_POINT=XXXX
+volumes:
+  myhome:
