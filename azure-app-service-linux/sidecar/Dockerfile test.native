@@ -1,0 +1,13 @@
+FROM golang:1.21 AS build
+WORKDIR /src
+COPY copy_dir.go .
+
+RUN go build -o /bin/copy_dir ./copy_dir.go
+
+FROM scratch
+
+COPY /test /test
+
+COPY --from=build /bin/copy_dir /bin/copy_dir
+
+ENTRYPOINT ["/bin/copy_dir","/test","/home/test"]

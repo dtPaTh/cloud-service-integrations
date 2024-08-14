@@ -1,0 +1,13 @@
+ARG DT_BASEIMG
+
+FROM ${DT_BASEIMG} as dtagent
+
+FROM alpine:latest
+
+COPY init.sh /init.sh
+
+COPY --from=dtagent / /
+
+RUN chmod +x /init.sh
+ 
+ENTRYPOINT ["/init.sh"]

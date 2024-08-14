@@ -1,0 +1,13 @@
+ARG DT_BASEIMG
+
+FROM golang:1.21 AS build
+WORKDIR /src
+COPY copy_dir.go .
+
+RUN go build -o /bin/copy_dir ./copy_dir.go
+
+FROM ${DT_BASEIMG}
+ 
+COPY --from=build /bin/copy_dir /bin/copy_dir
+ 
+ENTRYPOINT ["/bin/copy_di","/opt/dynatrace","/home/dynatrace"]
