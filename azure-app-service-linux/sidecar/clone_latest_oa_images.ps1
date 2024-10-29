@@ -17,7 +17,7 @@
 Function Login-Azure {
   [CmdletBinding()]
   Param (
-    [string]$subscription = "c96a431a-0fbb-4ade-a09c-a3475243afb7"
+    [string]$subscription 
   )
   az login
   az account set --subscription $subscription 
@@ -83,7 +83,7 @@ Function Get-Latest-Version {
 }
 
 
-#Login-Azure -subscription $ACRSubscription
+Login-Azure -subscription $ACRSubscription
 Login-ACR -registry $ACR -subscription $ACRSubscription -containerRuntime $containerRuntime
 
 Login-Registry -registry $DTDomain -user $DTUser -token $DTToken -containerRuntime $containerRuntime
@@ -94,7 +94,7 @@ $artefacts=(
 )
 
 $techs = (
-  [pscustomobject]@{name='java'; tag='-java'}#,
+  [pscustomobject]@{name='java'; tag='-java'},
   [pscustomobject]@{name='dotnet'; tag='-dotnet'},
   [pscustomobject]@{name='nodejs'; tag='-nodejs'},
   [pscustomobject]@{name='go'; tag='-go'},
@@ -104,6 +104,7 @@ $techs = (
 
 
 $version = Get-Latest-Version -apiDomain $DTDomain -token $DTToken
+$versionRollingMinor = $version.substring(0,5)+".x"
 #Get-DT-ConnectionInfo -apiDomain $DTDomain -token $DTToken
 
 $targetRegistry = "${ACR}.azurecr.io"
@@ -111,19 +112,40 @@ $targetRegistry = "${ACR}.azurecr.io"
 foreach ($tech in $techs) {
   foreach($a in $artefacts) {
 
+    $versionTag = "$($version)$($tech.tag)-$($a.targetTagPostfix)"
+    $rollingVersionTag = "$($versionRollingMinor)$($tech.tag)-$($a.targetTagPostfix)"
+    $latestVersionTag = "latest$($tech.tag)-$($a.targetTagPostfix)"
+
+    $sourceRepo = "${DTDomain}$($a.srcPath)"
+    $targetRepo = "${targetRegistry}$($a.targetPath)"
+
+    $sourceImage = "${sourceRepo}:$($tech.name)-raw"
+    
     #pull oneagent codemodule images
-    #iex "${containerRuntime} pull ${DTDomain}$($a.srcPath):$($tech.name)-raw"
+    iex "${containerRuntime} pull ${sourceImage}"
 
     #tag with new naming schema for remote registry
-    #iex "${containerRuntime} tag ${DTDomain}$($a.srcPath):$($tech.name)-raw ${targetRegistry}$($a.targetPath):$($version.substring(0,5))$($tech.tag)-$($a.targetTagPostfix)"
+    iex "${containerRuntime} tag ${sourceImage} ${targetRepo}:${versionTag}"
+    iex "${containerRuntime} tag ${sourceImage} ${targetRepo}:${rollingVersionTag}"
+    iex "${containerRuntime} tag ${sourceImage} ${targetRepo}:${lastestVersionTag}"
     
     #push oneagent codemodule images to remote registry
-    #iex "docker push ${targetRegistry}$($a.targetPath):$($version.substring(0,5))$($tech.tag)-$($a.targetTagPostfix)"
+    iex "${containerRuntime} push ${targetRepo}:${versionTag}"
+    iex "${containerRuntime} push ${targetRepo}:${rollingVersionTag}"
+    iex "${containerRuntime} push ${targetRepo}:${lastestVersionTag}"
 
-    #build the bootstrated oneagent codemodule images with a rolling version tag
-    iex "${containerRuntime} build --no-cache --build-arg=`"DT_BASEIMG=${DTDomain}$($a.srcPath):$($tech.name)-raw`" -f Dockerfile.native -t ${targetRegistry}$($a.targetPath):$($version.substring(0,5))$($tech.tag)-$($a.targetTagPostfix)-bootstrap"
-
+    #build the bootstrated oneagent codemodule image
+    iex "${containerRuntime} build --no-cache --build-arg=`"DT_BASEIMG=${sourceImage}`" -f Dockerfile.native -t ${targetRepo}:${versionTag}-bootstrap"
+    
+    #tag images using latest and rolling version
+    iex "${containerRuntime} tag ${targetRepo}:${versionTag}-bootstrap ${targetRepo}:${rollingVersionTag}-bootstrap"
+    iex "${containerRuntime} tag ${targetRepo}:${versionTag}-bootstrap ${targetRepo}:${lastestVersionTag}-bootstrap"
+ 
     #push bootstrapped codemodules images to remote registry
-    #iex "docker push ${targetRegistry}$($a.targetPath):$($version.substring(0,5))$($tech.tag)-$($a.targetTagPostfix)-bootstrap"
+    iex "${containerRuntime} push ${targetRepo}:${versionTag}-bootstrap"
+    iex "${containerRuntime} push ${targetRepo}:${rollingVersionTag}-bootstrap"
+    iex "${containerRuntime} push ${targetRepo}:${lastestVersionTag}-bootstrap"
+    break;
   }
+  break;
 }
