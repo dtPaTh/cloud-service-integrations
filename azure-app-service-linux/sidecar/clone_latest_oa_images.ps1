@@ -145,7 +145,7 @@ foreach ($tech in $techs) {
     iex "${containerRuntime} push ${targetRepo}:${versionTag}-bootstrap"
     iex "${containerRuntime} push ${targetRepo}:${rollingVersionTag}-bootstrap"
     iex "${containerRuntime} push ${targetRepo}:${lastestVersionTag}-bootstrap"
-    break;
+
   }
-  break;
+
 }
