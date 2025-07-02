@@ -2,8 +2,9 @@
 
 ## Azure
 * [Azure AppService For Linux](azure-app-service-linux/README.md)
+* [Azure Container Apps](azure-container-apps.md)
 
-## Container
+## Generic Container Integrations
 * [Universal Injection for Linux](container-integration/universal-injection.md)
 
     Easy integration using technology indepentent injection. 
