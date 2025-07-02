@@ -3,6 +3,7 @@
 ## Azure
 * [Azure AppService For Linux](azure-app-service-linux/README.md)
 * [Azure Container Apps](azure-container-apps.md)
+* [Sync Azure AppService Resource Tags into DT_TAGS](https://github.com/dtPaTh/cloud-service-integrations/blob/main/apply-tags-for-appservices-as-envvar.ps1)
 
 ## Generic Container Integrations
 * [Universal Injection for Linux](container-integration/universal-injection.md)
