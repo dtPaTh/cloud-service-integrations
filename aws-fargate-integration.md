@@ -143,11 +143,26 @@ Your task definiton then may look like this for asp.net sample application:
 }
 ```
 
-## 5. Deploy Workflow
+## 5. Register the updated task definition to create a new revision
 ```bash
-aws ecs run-task \
-  --cluster <your-cluster> \
-  --launch-type FARGATE \
-  --task-definition fargatetask \
-  --network-configuration "awsvpcConfiguration={subnets=[subnet-abc123],securityGroups=[sg-xyz789],assignPublicIp=ENABLED}"
+aws ecs register-task-definition \
+  --cli-input-json file://fargatetask.json
 ```
+## 6.  Update your ECS service to use the new revision
+If you're using a service (not run-task), update it to use the latest revision:
+
+``` bash
+aws ecs update-service \
+  --cluster <your-cluster-name> \
+  --service <your-service-name> \
+  --task-definition <task-definition-name>:<revision>
+```
+Or to always point to the latest revision:
+
+``` bash
+aws ecs update-service \
+  --cluster <your-cluster-name> \
+  --service <your-service-name> \
+  --task-definition <task-definition-name>
+```
+AWS will automatically use the latest revision.
