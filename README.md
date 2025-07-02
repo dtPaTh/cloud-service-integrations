@@ -1,8 +1,8 @@
 # Testbed for Dynatrace cloud service integrations
 
 ## Azure
-* [Azure AppService For Linux](azure-app-service-linux/README.md)
-* [Azure Container Apps](azure-container-apps.md)
+* [Integrate OneAgent into Azure AppService For Linux](azure-app-service-linux/README.md)
+* [Integrate OneAgent into  Azure Container Apps](azure-container-apps.md)
 * [Sync Azure AppService Resource Tags into DT_TAGS](https://github.com/dtPaTh/cloud-service-integrations/blob/main/apply-tags-for-appservices-as-envvar.ps1)
 
 ## Generic Container Integrations
