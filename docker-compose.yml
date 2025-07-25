@@ -1,0 +1,29 @@
+services:
+  dtsidecar:
+    image: public.ecr.aws/dynatrace/dynatrace-codemodules:1.315.29.20250515-133056
+    command: ["--source=/opt/dynatrace/oneagent", "--target=/home/dynatrace/oneagent", "--technology=dotnet"]
+    user: 0:0
+    volumes:
+      - sharedvolume:/home/
+  appcontainer:
+    image: "mcr.microsoft.com/dotnet/samples:aspnetapp"
+    depends_on:
+      dtsidecar: 
+        condition: service_completed_successfully
+    ports:
+      - "8080"
+      - "443"
+    volumes:
+      - sharedvolume:/home/
+    environment:
+      - LD_PRELOAD=/home/dynatrace/oneagent/agent/lib64/liboneagentproc.so
+      - DT_AGENTACTIVE=true
+      - DT_LOGSTREAM=stdout   
+      - DT_LOGLEVELCON=INFO
+      - DT_TENANT=${DT_TENANT}
+      - DT_TENANTTOKEN=${DT_TENANTTOKEN}
+      - DT_CONNECTION_POINT=${DT_CONNECTION_POINT}
+volumes:
+  sharedvolume:
+    driver:
+      local
