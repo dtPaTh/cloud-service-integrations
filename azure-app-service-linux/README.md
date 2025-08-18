@@ -79,11 +79,11 @@ $LOCATION="westeurope"
 
 $NAME="dt-webapp-linux"
 
-$DT_API_URL="https://***REMOVED***.live.dynatrace.com"
-$AZURE_SERVICE_PLAN_NAME="dt-webapp-linux"
+$DT_API_URL="https://XXXX.live.dynatrace.com"
+$AZURE_SERVICE_PLAN_NAME="XXXXX"
 $APPSVC=$NAME
 $START_APP="pm2 start index.js --no-daemon"
-$DT_API_TOKEN="***REMOVED***"
+$DT_API_TOKEN="XXXXXX
 $STARTUP="curl -o /tmp/installer.sh -s `"$DT_API_URL/api/v1/deployment/installer/agent/unix/paas-sh/latest?Api-Token=$DT_API_TOKEN`&arch=x86`" && sh /tmp/installer.sh /home && LD_PRELOAD='/home/dynatrace/oneagent/agent/lib64/liboneagentproc.so' $START_APP"
 
 $STARTUP='curl -o /tmp/installer.sh -s "$DT_API_URL/api/v1/deployment/installer/agent/unix/paas-sh/latest?Api-Token=$DT_API_TOKEN`&arch=x86"'
