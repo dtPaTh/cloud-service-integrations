@@ -1,11 +1,35 @@
 # Integrate Dynatrace OneAgent into Azure Container Apps 
 
-The following instructions describe how to integrate Dynatrace OneAgent code-modules to your Azure Container Apps using an initContaienr approach. 
+The following instructions describe how to integrate Dynatrace OneAgent code-modules to your Azure Container Apps using an initContainer approach. 
 The initContainer copies the Dynatrace OneAgent artefacts into a (ephemeral) shared volume, from where the OneAgent is configured and activated via environment variables. 
 
+While you can configure the Dynatrace initContainer within the Azure Portal, the following step-by-step guide shows how to do it using Powershell and the azure-cli: 
 
-While you can configure the Dynatrace initcontainer within the Azure Portal, the following step-by-step guide shows how to do it using Powershell and the azure cli: 
+## Prerequisites
+1. API Token to access the Dynatrace REST API for fetching the necessary tenant configuration
+   
+   [Create an API Token](https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication) with **"InstallerDownload"** permissions. The token created is later referenced as ```<API-TOKEN>```
+     
+2. API endpoint url, later referened as ```<ADDRESS>```
+   1. Using your environments [cluster-endpoint](https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id)
+   2. or alternatively an [ActiveGate](https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-activegate) address.
 
+3. Dynatrace connection parameters
+   
+   To configure the OneAgent Code-Modules to connect to Dynatrace, you need to retrieve the agent connection parameters via the Dynatrace API:  
+
+   API Endpoint ```<ADDRESS>/api/v1/deployment/installer/agent/connectioninfo?Api-Token=<API-TOKEN>```
+
+   You can e.g. use **curl** to retrieve the information as a Json payloud:
+    ```
+    {
+        "tenantUUID" : "XXXXXXXX",
+        "tenantToken" : "XXXXXXXXXX",
+        "communicationEndpoints" :  [ "https://XXXXXXX:9999/communication", "https://YYYYYYY/communication"],
+        "formattedCommunicationEndpoints" : "https://XXXXXXX:9999/communication;https://YYYYYYY/communication"
+    }
+    ```
+    
 ## Retrieve your containerapps manifest
 ``` Powershell
 $ResourceGroup = "<Your ContainerApp's resourcegroup name>"
@@ -13,7 +37,6 @@ $AppName = "<Your ContainerApp's name>"
 
 az containerapp show --name $appName --resource-group $resourceGroup --output yaml > containerapp.yaml
 ```
-
 
 ## Modify the containerapp.yaml file
 
@@ -30,9 +53,12 @@ az containerapp show --name $appName --resource-group $resourceGroup --output ya
 
 ### Add an init-container to copy the Oneagent artefacts
 
-The init-container uses Dynatrace OneAgent images from e.g. [Docker Hub](https://hub.docker.com/r/dynatrace/dynatrace-codemodules). The dynatrace/dynatrace-codemodules is an immutable container image containing binaries for all technologies supported by Dynatrace. 
+The init-container uses Dynatrace OneAgent images from e.g.[public.ecr.aws/dynatrace/dynatrace-codemodules](https://gallery.ecr.aws/dynatrace/dynatrace-codemodules) or [Docker Hub](https://hub.docker.com/r/dynatrace/dynatrace-codemodules). 
 
-The init-container integration does not provide auto-update of OneAgent and new versions need to be provide by defining a [newer version tag](https://hub.docker.com/r/dynatrace/dynatrace-codemodules/tags) of the image.
+**Available image tags:**
+* Immutable tags containing all code-modules of a specific release e.g.: 1.327.51.20251205-162230, 1.327.43.20251117-175735
+* Mutable (or rolling tags) with major.minor version scheme e.g.: 1.327
+* Technology specific images with immutable and mutable tags e.g.: 1.327.51.20251205-162230-java, 1.327-java, 1.327-dotnet
 
 ``` Yaml
 ...
